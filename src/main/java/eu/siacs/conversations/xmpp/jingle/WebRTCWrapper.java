@@ -22,7 +22,6 @@ import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
-import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
 import org.webrtc.DefaultVideoDecoderFactory;
 import org.webrtc.DefaultVideoEncoderFactory;
@@ -34,7 +33,6 @@ import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpReceiver;
-import org.webrtc.RtpTransceiver;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceTextureHelper;
@@ -92,25 +90,11 @@ public class WebRTCWrapper {
         @Override
         public void onSignalingChange(PeerConnection.SignalingState signalingState) {
             Log.d(EXTENDED_LOGGING_TAG, "onSignalingChange(" + signalingState + ")");
-            //this is called after removeTrack or addTrack
-            //and should then trigger a content-add or content-remove or something
-            //https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/removeTrack
-        }
-
-        @Override
-        public void onConnectionChange(PeerConnection.PeerConnectionState newState) {
-            eventCallback.onConnectionChange(newState);
         }
 
         @Override
         public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
-
-        }
-
-        @Override
-        public void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {
-            Log.d(Config.LOGTAG, "remote candidate selected: " + event.remote);
-            Log.d(Config.LOGTAG, "local candidate selected: " + event.local);
+            eventCallback.onConnectionChange(iceConnectionState);
         }
 
         @Override
@@ -120,7 +104,7 @@ public class WebRTCWrapper {
 
         @Override
         public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
-            Log.d(EXTENDED_LOGGING_TAG, "onIceGatheringChange(" + iceGatheringState + ")");
+
         }
 
         @Override
@@ -164,11 +148,6 @@ public class WebRTCWrapper {
         public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
             final MediaStreamTrack track = rtpReceiver.track();
             Log.d(EXTENDED_LOGGING_TAG, "onAddTrack(kind=" + (track == null ? "null" : track.kind()) + ",numMediaStreams=" + mediaStreams.length + ")");
-        }
-
-        @Override
-        public void onTrack(RtpTransceiver transceiver) {
-            Log.d(EXTENDED_LOGGING_TAG, "onTrack(mid=" + transceiver.getMid() + ",media=" + transceiver.getMediaType() + ")");
         }
     };
     @Nullable
@@ -533,8 +512,8 @@ public class WebRTCWrapper {
         }
     }
 
-    public PeerConnection.PeerConnectionState getState() {
-        return requirePeerConnection().connectionState();
+    public PeerConnection.IceConnectionState getState() {
+        return requirePeerConnection().iceConnectionState();
     }
 
     EglBase.Context getEglBaseContext() {
@@ -572,7 +551,7 @@ public class WebRTCWrapper {
     public interface EventCallback {
         void onIceCandidate(IceCandidate iceCandidate);
 
-        void onConnectionChange(PeerConnection.PeerConnectionState newState);
+        void onConnectionChange(PeerConnection.IceConnectionState newState);
 
         void onAudioDeviceChanged(AppRTCAudioManager.AudioDevice selectedAudioDevice, Set<AppRTCAudioManager.AudioDevice> availableAudioDevices);
     }

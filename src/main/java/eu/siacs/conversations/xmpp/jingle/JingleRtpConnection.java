@@ -811,7 +811,7 @@ public class JingleRtpConnection extends AbstractJingleConnection implements Web
                     return RtpEndUserState.CONNECTING;
                 }
             case SESSION_ACCEPTED:
-                final PeerConnection.PeerConnectionState state;
+                final PeerConnection.IceConnectionState state;
                 try {
                     state = webRTCWrapper.getState();
                 } catch (final WebRTCWrapper.PeerConnectionNotInitialized e) {
@@ -819,11 +819,11 @@ public class JingleRtpConnection extends AbstractJingleConnection implements Web
                     //be in SESSION_ACCEPTED even though the peerConnection has been torn down
                     return RtpEndUserState.ENDING_CALL;
                 }
-                if (state == PeerConnection.PeerConnectionState.CONNECTED) {
+                if (state == PeerConnection.IceConnectionState.CONNECTED) {
                     return RtpEndUserState.CONNECTED;
-                } else if (state == PeerConnection.PeerConnectionState.NEW || state == PeerConnection.PeerConnectionState.CONNECTING) {
+                } else if (state == PeerConnection.IceConnectionState.NEW || state == PeerConnection.IceConnectionState.CHECKING) {
                     return RtpEndUserState.CONNECTING;
-                } else if (state == PeerConnection.PeerConnectionState.CLOSED) {
+                } else if (state == PeerConnection.IceConnectionState.CLOSED) {
                     return RtpEndUserState.ENDING_CALL;
                 } else {
                     return rtpConnectionStarted == 0 ? RtpEndUserState.CONNECTIVITY_ERROR : RtpEndUserState.CONNECTIVITY_LOST_ERROR;
@@ -1047,18 +1047,18 @@ public class JingleRtpConnection extends AbstractJingleConnection implements Web
     }
 
     @Override
-    public void onConnectionChange(final PeerConnection.PeerConnectionState newState) {
+    public void onConnectionChange(final PeerConnection.IceConnectionState newState) {
         Log.d(Config.LOGTAG, id.account.getJid().asBareJid() + ": PeerConnectionState changed to " + newState);
-        if (newState == PeerConnection.PeerConnectionState.CONNECTED && this.rtpConnectionStarted == 0) {
+        if (newState == PeerConnection.IceConnectionState.CONNECTED && this.rtpConnectionStarted == 0) {
             this.rtpConnectionStarted = SystemClock.elapsedRealtime();
         }
-        if (newState == PeerConnection.PeerConnectionState.CLOSED && this.rtpConnectionEnded == 0) {
+        if (newState == PeerConnection.IceConnectionState.CLOSED && this.rtpConnectionEnded == 0) {
             this.rtpConnectionEnded = SystemClock.elapsedRealtime();
         }
         //TODO 'DISCONNECTED' might be an opportunity to renew the offer and send a transport-replace
         //TODO exact syntax is yet to be determined but transport-replace sounds like the most reasonable
         //as there is no content-replace
-        if (Arrays.asList(PeerConnection.PeerConnectionState.FAILED, PeerConnection.PeerConnectionState.DISCONNECTED).contains(newState)) {
+        if (Arrays.asList(PeerConnection.IceConnectionState.FAILED, PeerConnection.IceConnectionState.DISCONNECTED).contains(newState)) {
             if (isTerminated()) {
                 Log.d(Config.LOGTAG, id.account.getJid().asBareJid() + ": not sending session-terminate after connectivity error because session is already in state " + this.state);
                 return;

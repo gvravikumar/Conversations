@@ -79,8 +79,9 @@ dependencies {
     //okhttp needs to stick with 3.12.x
     implementation 'com.squareup.okhttp3:okhttp:3.12.12'
     implementation 'com.google.guava:guava:27.1-android'
+    api files('libs/libwebrtc.jar')
     quicksyImplementation 'io.michaelrocks:libphonenumber-android:8.11.1'
-    implementation fileTree(include: ['libwebrtc-m84.aar'], dir: 'libs')
+//    implementation fileTree(include: ['libwebrtc.aar'], dir: 'libs')
 }
 
 ext {
