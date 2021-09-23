@@ -31,8 +31,9 @@ package eu.siacs.conversations.ui.util;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.support.annotation.AttrRes;
-import android.support.annotation.ColorInt;
+
+import androidx.annotation.AttrRes;
+import androidx.annotation.ColorInt;
 
 public class StyledAttributes {
 	public static android.graphics.drawable.Drawable getDrawable(Context context, @AttrRes int id) {
@@ -49,7 +50,8 @@ public class StyledAttributes {
 		return value;
 	}
 
-	public static @ColorInt int getColor(Context context, @AttrRes int attr) {
+	public static @ColorInt
+	int getColor(Context context, @AttrRes int attr) {
 		TypedArray typedArray = context.obtainStyledAttributes(new int[]{attr});
 		int color = typedArray.getColor(0,0);
 		typedArray.recycle();

@@ -1,8 +1,9 @@
 package eu.siacs.conversations.http;
 
 import android.os.PowerManager;
-import android.support.annotation.Nullable;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
 
 import com.google.common.io.ByteStreams;
 

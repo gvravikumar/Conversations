@@ -2,8 +2,9 @@ package eu.siacs.conversations.crypto;
 
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.support.annotation.StringRes;
 import android.util.Log;
+
+import androidx.annotation.StringRes;
 
 import org.openintents.openpgp.OpenPgpError;
 import org.openintents.openpgp.OpenPgpSignatureResult;

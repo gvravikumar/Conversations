@@ -2,10 +2,11 @@ package eu.siacs.conversations.crypto.axolotl;
 
 import android.os.Bundle;
 import android.security.KeyChain;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.Pair;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.whispersystems.libsignal.SignalProtocolAddress;

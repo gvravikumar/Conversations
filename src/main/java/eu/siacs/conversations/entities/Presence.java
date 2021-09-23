@@ -1,6 +1,7 @@
 package eu.siacs.conversations.entities;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.lang.Comparable;
 import java.util.Locale;

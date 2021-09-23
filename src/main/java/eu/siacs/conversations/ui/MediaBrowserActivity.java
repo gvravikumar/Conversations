@@ -2,9 +2,10 @@ package eu.siacs.conversations.ui;
 
 import android.content.Context;
 import android.content.Intent;
-import android.databinding.DataBindingUtil;
+
+import androidx.appcompat.widget.Toolbar;
+import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 
 import java.util.List;
 

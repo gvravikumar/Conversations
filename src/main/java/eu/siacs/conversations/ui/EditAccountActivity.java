@@ -6,7 +6,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
-import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,11 +14,6 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
-import android.support.design.widget.TextInputLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AlertDialog.Builder;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -33,6 +27,13 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog.Builder;
+import androidx.appcompat.widget.Toolbar;
+import androidx.databinding.DataBindingUtil;
+
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.common.base.CharMatcher;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
@@ -745,6 +746,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
     @Override
     public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
         if (intent != null && intent.getData() != null) {
             final XmppUri uri = new XmppUri(intent.getData());
             if (xmppConnectionServiceBound) {

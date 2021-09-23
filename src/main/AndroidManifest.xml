@@ -265,7 +265,7 @@
         </service>
 
         <provider
-            android:name="android.support.v4.content.FileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
             android:exported="false"
             android:grantUriPermissions="true">
@@ -294,6 +294,11 @@
             android:label="@string/discover_channels" />
         <activity
             android:name=".ui.RtpSessionActivity"
+            android:autoRemoveFromRecents="true"
+            android:launchMode="singleInstance"
+            android:supportsPictureInPicture="true" />
+        <activity
+            android:name=".ui.BroadcastActivity"
             android:autoRemoveFromRecents="true"
             android:launchMode="singleInstance"
             android:supportsPictureInPicture="true" />

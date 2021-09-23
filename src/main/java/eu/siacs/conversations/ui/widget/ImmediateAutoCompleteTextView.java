@@ -32,7 +32,9 @@ package eu.siacs.conversations.ui.widget;
 import android.content.Context;
 import android.util.AttributeSet;
 
-public class ImmediateAutoCompleteTextView extends android.support.v7.widget.AppCompatAutoCompleteTextView {
+import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
+
+public class ImmediateAutoCompleteTextView extends AppCompatAutoCompleteTextView {
 
 	public ImmediateAutoCompleteTextView(Context context, AttributeSet attrs) {
 		super(context, attrs);

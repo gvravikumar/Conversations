@@ -1,7 +1,8 @@
 package eu.siacs.conversations.services;
 
-import android.support.annotation.NonNull;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -20,8 +21,11 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Room;
 import eu.siacs.conversations.http.HttpConnectionManager;
+import eu.siacs.conversations.http.data.LiveStreamResponse;
+import eu.siacs.conversations.http.services.JoiintNetworkService;
 import eu.siacs.conversations.http.services.MuclumbusService;
 import eu.siacs.conversations.parser.IqParser;
+import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.OnIqPacketReceived;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
@@ -32,7 +36,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-import eu.siacs.conversations.xmpp.Jid;
 
 public class ChannelDiscoveryService {
 
@@ -40,6 +43,7 @@ public class ChannelDiscoveryService {
 
 
     private MuclumbusService muclumbusService;
+    private JoiintNetworkService joiintNetworkInterface;
 
     private final Cache<String, List<Room>> cache;
 
@@ -65,6 +69,50 @@ public class ChannelDiscoveryService {
                 .callbackExecutor(Executors.newSingleThreadExecutor())
                 .build();
         this.muclumbusService = retrofit.create(MuclumbusService.class);
+    }
+
+    void initializeJoiintService() {
+        final OkHttpClient.Builder builder = new OkHttpClient.Builder();
+
+        if (service.useTorToConnect()) {
+            try {
+                builder.proxy(HttpConnectionManager.getProxy());
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to use Tor proxy", e);
+            }
+        }
+        Retrofit retrofit = new Retrofit.Builder()
+                .client(builder.build())
+                .baseUrl("https://api-dev1.joiint.com")
+                .addConverterFactory(GsonConverterFactory.create())
+                .callbackExecutor(Executors.newSingleThreadExecutor())
+                .build();
+        this.joiintNetworkInterface = retrofit.create(JoiintNetworkService.class);
+    }
+
+    void getSecretKeyWithOnlyAudio(OnSecretKeyReceived listener) {
+        Call<LiveStreamResponse> call = joiintNetworkInterface.getSecretLiveStreamKeyWithOnlyAudio();
+        try {
+            call.enqueue(new Callback<LiveStreamResponse>() {
+                @Override
+                public void onResponse(@NonNull Call<LiveStreamResponse> call, @NonNull Response<LiveStreamResponse> response) {
+                    final LiveStreamResponse body = response.body();
+                    if (body == null) {
+                        listener.secretKeyFound(null);
+                        logError(response);
+                        return;
+                    }
+                    listener.secretKeyFound(body);
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<LiveStreamResponse> call, @NonNull Throwable throwable) {
+                    listener.secretKeyFound(null);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     void cleanCache() {
@@ -251,6 +299,10 @@ public class ChannelDiscoveryService {
 
     public interface OnChannelSearchResultsFound {
         void onChannelSearchResultsFound(List<Room> results);
+    }
+
+    public interface OnSecretKeyReceived {
+        void secretKeyFound(LiveStreamResponse liveStreamResponse);
     }
 
     public enum Method {

@@ -4,7 +4,7 @@ import android.content.Context;
 import android.os.Build;
 import android.support.text.emoji.EmojiCompat;
 import android.support.text.emoji.FontRequestEmojiCompatConfig;
-import android.support.v4.provider.FontRequest;
+import androidx.core.provider.FontRequest;
 import android.util.Log;
 
 import eu.siacs.conversations.Config;

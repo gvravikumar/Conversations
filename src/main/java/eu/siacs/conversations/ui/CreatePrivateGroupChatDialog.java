@@ -2,11 +2,13 @@ package eu.siacs.conversations.ui;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.databinding.DataBindingUtil;
+
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
-import android.support.v7.app.AlertDialog;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.DialogFragment;
 import android.widget.Spinner;
 
 import java.util.ArrayList;

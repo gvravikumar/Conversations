@@ -39,15 +39,16 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.databinding.DataBindingUtil;
+
+import androidx.annotation.IdRes;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
+import androidx.databinding.DataBindingUtil;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.annotation.IdRes;
-import android.support.annotation.NonNull;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -526,6 +527,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 
     @Override
     protected void onNewIntent(final Intent intent) {
+        super.onNewIntent(intent);
         if (isViewOrShareIntent(intent)) {
             if (xmppConnectionService != null) {
                 clearPendingViewIntent();

@@ -39,4 +39,5 @@
 	<color name="scan_result_dots">#c04CAF50</color>
 
 	<color name="blue500">#ff2196f3</color>
+	<color name="mux_pink">#FB2490</color>
 </resources>

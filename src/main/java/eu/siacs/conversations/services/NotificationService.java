@@ -17,19 +17,18 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationCompat.BigPictureStyle;
-import android.support.v4.app.NotificationCompat.Builder;
-import android.support.v4.app.NotificationManagerCompat;
-import android.support.v4.app.Person;
-import android.support.v4.app.RemoteInput;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.graphics.drawable.IconCompat;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.Person;
+import androidx.core.app.RemoteInput;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.IconCompat;
 
 import java.io.File;
 import java.io.IOException;
@@ -495,7 +494,7 @@ public class NotificationService {
         }
     }
 
-    private void setNotificationColor(final Builder mBuilder) {
+    private void setNotificationColor(final NotificationCompat.Builder mBuilder) {
         mBuilder.setColor(ContextCompat.getColor(mXmppConnectionService, R.color.green600));
     }
 
@@ -527,7 +526,7 @@ public class NotificationService {
             if (notify) {
                 this.markLastNotification();
             }
-            final Builder mBuilder;
+            final NotificationCompat.Builder mBuilder;
             if (notifications.size() == 1 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
                 mBuilder = buildSingleConversations(notifications.values().iterator().next(), notify, quiteHours);
                 modifyForSoundVibrationAndLight(mBuilder, notify, quiteHours, preferences);
@@ -542,7 +541,7 @@ public class NotificationService {
                     for (Map.Entry<String, ArrayList<Message>> entry : notifications.entrySet()) {
                         String uuid = entry.getKey();
                         final boolean notifyThis = notifyOnlyOneChild ? conversations.contains(uuid) : notify;
-                        Builder singleBuilder = buildSingleConversations(entry.getValue(), notifyThis, quiteHours);
+                        NotificationCompat.Builder singleBuilder = buildSingleConversations(entry.getValue(), notifyThis, quiteHours);
                         if (!notifyOnlyOneChild) {
                             singleBuilder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY);
                         }
@@ -557,7 +556,7 @@ public class NotificationService {
         }
     }
 
-    private void modifyForSoundVibrationAndLight(Builder mBuilder, boolean notify, boolean quietHours, SharedPreferences preferences) {
+    private void modifyForSoundVibrationAndLight(NotificationCompat.Builder mBuilder, boolean notify, boolean quietHours, SharedPreferences preferences) {
         final Resources resources = mXmppConnectionService.getResources();
         final String ringtone = preferences.getString("notification_ringtone", resources.getString(R.string.notification_ringtone));
         final boolean vibrate = preferences.getBoolean("vibrate_on_notification", resources.getBoolean(R.bool.vibrate_on_notification));
@@ -591,7 +590,7 @@ public class NotificationService {
         }
     }
 
-    private void modifyIncomingCall(Builder mBuilder) {
+    private void modifyIncomingCall(NotificationCompat.Builder mBuilder) {
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService);
         final Resources resources = mXmppConnectionService.getResources();
         final String ringtone = preferences.getString("call_ringtone", resources.getString(R.string.incoming_call_ringtone));
@@ -615,8 +614,8 @@ public class NotificationService {
         }
     }
 
-    private Builder buildMultipleConversation(final boolean notify, final boolean quietHours) {
-        final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, quietHours ? "quiet_hours" : (notify ? "messages" : "silent_messages"));
+    private NotificationCompat.Builder buildMultipleConversation(final boolean notify, final boolean quietHours) {
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, quietHours ? "quiet_hours" : (notify ? "messages" : "silent_messages"));
         final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
         style.setBigContentTitle(mXmppConnectionService.getString(R.string.x_unread_conversations, notifications.size()));
         final StringBuilder names = new StringBuilder();
@@ -657,8 +656,8 @@ public class NotificationService {
         return mBuilder;
     }
 
-    private Builder buildSingleConversations(final ArrayList<Message> messages, final boolean notify, final boolean quietHours) {
-        final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, quietHours ? "quiet_hours" : (notify ? "messages" : "silent_messages"));
+    private NotificationCompat.Builder buildSingleConversations(final ArrayList<Message> messages, final boolean notify, final boolean quietHours) {
+        final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, quietHours ? "quiet_hours" : (notify ? "messages" : "silent_messages"));
         if (messages.size() >= 1) {
             final Conversation conversation = (Conversation) messages.get(0).getConversation();
             mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
@@ -757,7 +756,7 @@ public class NotificationService {
         return mBuilder;
     }
 
-    private void modifyForImage(final Builder builder, final Message message, final ArrayList<Message> messages) {
+    private void modifyForImage(final NotificationCompat.Builder builder, final Message message, final ArrayList<Message> messages) {
         try {
             final Bitmap bitmap = mXmppConnectionService.getFileBackend().getThumbnail(message, getPixel(288), false);
             final ArrayList<Message> tmp = new ArrayList<>();
@@ -767,7 +766,7 @@ public class NotificationService {
                     tmp.add(msg);
                 }
             }
-            final BigPictureStyle bigPictureStyle = new NotificationCompat.BigPictureStyle();
+            final NotificationCompat.BigPictureStyle bigPictureStyle = new NotificationCompat.BigPictureStyle();
             bigPictureStyle.bigPicture(bitmap);
             if (tmp.size() > 0) {
                 CharSequence text = getMergedBodies(tmp);
@@ -803,7 +802,7 @@ public class NotificationService {
         return builder.build();
     }
 
-    private void modifyForTextOnly(final Builder builder, final ArrayList<Message> messages) {
+    private void modifyForTextOnly(final NotificationCompat.Builder builder, final ArrayList<Message> messages) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             final Conversation conversation = (Conversation) messages.get(0).getConversation();
             final Person.Builder meBuilder = new Person.Builder().setName(mXmppConnectionService.getString(R.string.me));

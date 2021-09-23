@@ -32,15 +32,16 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.security.KeyChain;
-import android.support.annotation.BoolRes;
-import android.support.annotation.IntegerRes;
-import android.support.v4.app.RemoteInput;
-import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.util.Pair;
+
+import androidx.annotation.BoolRes;
+import androidx.annotation.IntegerRes;
+import androidx.core.app.RemoteInput;
+import androidx.core.content.ContextCompat;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
@@ -102,12 +103,14 @@ import eu.siacs.conversations.generator.MessageGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.http.CustomURLStreamHandlerFactory;
 import eu.siacs.conversations.http.HttpConnectionManager;
+import eu.siacs.conversations.http.data.LiveStreamResponse;
 import eu.siacs.conversations.parser.AbstractParser;
 import eu.siacs.conversations.parser.IqParser;
 import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.ui.BroadcastActivity;
 import eu.siacs.conversations.ui.ChooseAccountForProfilePictureActivity;
 import eu.siacs.conversations.ui.RtpSessionActivity;
 import eu.siacs.conversations.ui.SettingsActivity;
@@ -864,6 +867,11 @@ public class XmppConnectionService extends Service {
 
     public void reinitializeMuclumbusService() {
         mChannelDiscoveryService.initializeMuclumbusService();
+        mChannelDiscoveryService.initializeJoiintService();
+    }
+
+    public void getSecretKeyWithOnlyAudio(ChannelDiscoveryService.OnSecretKeyReceived listener) {
+        mChannelDiscoveryService.getSecretKeyWithOnlyAudio(listener);
     }
 
     public void discoverChannels(String query, ChannelDiscoveryService.Method method, ChannelDiscoveryService.OnChannelSearchResultsFound onChannelSearchResultsFound) {
@@ -1054,6 +1062,7 @@ public class XmppConnectionService extends Service {
             mNotificationService.initializeChannels();
         }
         mChannelDiscoveryService.initializeMuclumbusService();
+        mChannelDiscoveryService.initializeJoiintService();
         mForceDuringOnCreate.set(Compatibility.runsAndTargetsTwentySix(this));
         toggleForegroundService();
         this.destroyed = false;

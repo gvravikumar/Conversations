@@ -1,8 +1,9 @@
 package eu.siacs.conversations.ui;
 
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
+
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 
 
 public abstract class ActionBarActivity extends AppCompatActivity {

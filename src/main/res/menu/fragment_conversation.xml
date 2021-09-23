@@ -22,6 +22,10 @@
                 android:id="@+id/action_video_call"
                 android:icon="?attr/ic_make_video_call"
                 android:title="@string/video_call" />
+            <item
+                android:id="@+id/action_live_stream"
+                android:icon="?attr/ic_cloud_download"
+                android:title="@string/live_stream" />
         </menu>
     </item>
     <item

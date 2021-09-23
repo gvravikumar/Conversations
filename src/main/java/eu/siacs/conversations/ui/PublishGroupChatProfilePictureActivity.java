@@ -30,12 +30,13 @@
 package eu.siacs.conversations.ui;
 
 import android.content.Intent;
-import android.databinding.DataBindingUtil;
+
+import androidx.annotation.StringRes;
+import androidx.appcompat.widget.Toolbar;
+import androidx.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.StringRes;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -114,6 +115,7 @@ public class PublishGroupChatProfilePictureActivity extends XmppActivity impleme
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
             final CropImage.ActivityResult result = CropImage.getActivityResult(data);
             if (resultCode == RESULT_OK) {

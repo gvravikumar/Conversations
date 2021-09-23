@@ -20,8 +20,6 @@ import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
-import android.support.annotation.RequiresApi;
-import android.support.v4.content.FileProvider;
 import android.system.Os;
 import android.system.StructStat;
 import android.util.Base64;
@@ -29,6 +27,9 @@ import android.util.Base64OutputStream;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.content.FileProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;

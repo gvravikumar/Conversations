@@ -19,7 +19,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
-import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -35,12 +34,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.annotation.BoolRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AlertDialog.Builder;
-import android.support.v7.app.AppCompatDelegate;
 import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -49,6 +42,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.annotation.BoolRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog.Builder;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.databinding.DataBindingUtil;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -244,7 +245,7 @@ public abstract class XmppActivity extends ActionBarActivity {
     }
 
     public void showInstallPgpDialog() {
-        Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.openkeychain_required));
         builder.setIconAttribute(android.R.attr.alertDialogIcon);
         builder.setMessage(getText(R.string.openkeychain_required_long));
@@ -749,6 +750,19 @@ public abstract class XmppActivity extends ActionBarActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, requestCode);
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
+    protected boolean hasCameraAndAudioPermission(int requestCode) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED || checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, requestCode);
                 return false;
             } else {
                 return true;
