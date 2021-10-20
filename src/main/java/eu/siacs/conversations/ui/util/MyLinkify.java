@@ -35,6 +35,7 @@ import android.text.util.Linkify;
 
 import java.util.Locale;
 
+import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.text.FixedURLSpan;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.Patterns;
@@ -81,7 +82,7 @@ public class MyLinkify {
         if (end < cs.length()) {
             // Reject strings that were probably matched only because they contain a dot followed by
             // by some known TLD (see also comment for WORD_BOUNDARY in Patterns.java)
-            if (isAlphabetic(cs.charAt(end-1)) && isAlphabetic(cs.charAt(end))) {
+            if (isAlphabetic(cs.charAt(end - 1)) && isAlphabetic(cs.charAt(end))) {
                 return false;
             }
         }
@@ -112,12 +113,13 @@ public class MyLinkify {
         }
     }
 
-    public static void addLinks(Editable body, boolean includeGeo) {
+    public static void addLinks(Editable body, boolean includeGeo, Message message) {
         Linkify.addLinks(body, Patterns.XMPP_PATTERN, "xmpp", XMPPURI_MATCH_FILTER, null);
         Linkify.addLinks(body, Patterns.AUTOLINK_WEB_URL, "http", WEBURL_MATCH_FILTER, WEBURL_TRANSFORM_FILTER);
         if (includeGeo) {
             Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
         }
         FixedURLSpan.fix(body);
+        FixedURLSpan.setMessage(message);
     }
 }

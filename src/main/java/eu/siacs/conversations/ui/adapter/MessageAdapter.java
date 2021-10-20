@@ -7,8 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -18,6 +16,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,7 +31,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.google.common.base.Strings;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.List;
@@ -57,6 +62,7 @@ import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
+import eu.siacs.conversations.ui.WatchLiveStreamActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.service.AudioPlayer;
 import eu.siacs.conversations.ui.text.DividerSpan;
@@ -77,6 +83,8 @@ import eu.siacs.conversations.utils.TimeFrameUtils;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+
+import static eu.siacs.conversations.ui.BroadcastActivity.intentExtraPlaybackUrl;
 
 public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextView.CopyHandler {
 
@@ -320,6 +328,11 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
     }
 
     private void displayInfoMessage(ViewHolder viewHolder, CharSequence text, boolean darkBackground) {
+        try {
+            Log.e("stream", new JSONObject(text.toString()).toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
         viewHolder.image.setVisibility(View.GONE);
@@ -500,7 +513,23 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
             if (highlightedTerm != null) {
                 StylingHelper.highlight(activity, body, highlightedTerm, StylingHelper.isDarkText(viewHolder.messageBody));
             }
-            MyLinkify.addLinks(body, true);
+            MyLinkify.addLinks(body, true, message);
+            try {
+                JSONObject uuidAsMessage = new JSONObject(body.toString());
+                if (!uuidAsMessage.optString("uuid").isEmpty()) {
+                    viewHolder.tv_watch_live_steam_name.setVisibility(View.VISIBLE);
+                    viewHolder.messageBody.setVisibility(View.GONE);
+                    viewHolder.tv_watch_live_steam_name.setOnClickListener(view -> {
+                        getContext().startActivity(new Intent(getContext(), WatchLiveStreamActivity.class)
+                                .putExtra("liveStreamLink", uuidAsMessage.optString("PLAYBACKURL"))
+                                .putExtra("uuid", uuidAsMessage.optString("uuid")));
+                    });
+                    listSelectionManager.onUpdate(viewHolder.messageBody, message);
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             viewHolder.messageBody.setAutoLinkMask(0);
             viewHolder.messageBody.setText(EmojiWrapper.transform(body));
             viewHolder.messageBody.setTextIsSelectable(true);
@@ -642,6 +671,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
                 case SENT:
                     view = activity.getLayoutInflater().inflate(R.layout.message_sent, parent, false);
                     viewHolder.message_box = view.findViewById(R.id.message_box);
+                    viewHolder.tv_watch_live_steam_name = view.findViewById(R.id.tv_watch_live_steam_name);
                     viewHolder.contact_picture = view.findViewById(R.id.message_photo);
                     viewHolder.download_button = view.findViewById(R.id.download_button);
                     viewHolder.indicator = view.findViewById(R.id.security_indicator);
@@ -655,6 +685,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
                 case RECEIVED:
                     view = activity.getLayoutInflater().inflate(R.layout.message_received, parent, false);
                     viewHolder.message_box = view.findViewById(R.id.message_box);
+                    viewHolder.tv_watch_live_steam_name = view.findViewById(R.id.tv_watch_live_steam_name);
                     viewHolder.contact_picture = view.findViewById(R.id.message_photo);
                     viewHolder.download_button = view.findViewById(R.id.download_button);
                     viewHolder.indicator = view.findViewById(R.id.security_indicator);
@@ -977,6 +1008,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
         public ImageView edit_indicator;
         public RelativeLayout audioPlayer;
         protected LinearLayout message_box;
+        protected TextView tv_watch_live_steam_name;
         protected Button download_button;
         protected ImageView image;
         protected ImageView indicator;

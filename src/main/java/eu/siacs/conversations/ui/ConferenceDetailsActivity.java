@@ -477,7 +477,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         if (printableValue(subject)) {
             SpannableStringBuilder spannable = new SpannableStringBuilder(subject);
             StylingHelper.format(spannable, this.binding.mucSubject.getCurrentTextColor());
-            MyLinkify.addLinks(spannable, false);
+            MyLinkify.addLinks(spannable, false, null);
             this.binding.mucSubject.setText(EmojiWrapper.transform(spannable));
             this.binding.mucSubject.setTextAppearance(this, subject.length() > (hasTitle ? 128 : 196) ? R.style.TextAppearance_Conversations_Body1_Linkified : R.style.TextAppearance_Conversations_Subhead);
             this.binding.mucSubject.setAutoLinkMask(0);

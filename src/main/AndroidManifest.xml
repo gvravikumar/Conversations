@@ -302,6 +302,11 @@
             android:autoRemoveFromRecents="true"
             android:launchMode="singleInstance"
             android:supportsPictureInPicture="true" />
+        <activity
+            android:name=".ui.WatchLiveStreamActivity"
+            android:autoRemoveFromRecents="true"
+            android:launchMode="singleInstance"
+            android:supportsPictureInPicture="true" />
     </application>
 
 </manifest>

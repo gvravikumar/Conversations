@@ -1,8 +1,11 @@
 package eu.siacs.conversations.ui;
 
-import android.content.Intent;
+import android.app.PendingIntent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -17,22 +20,40 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.bumptech.glide.Glide;
 import com.pedro.encoder.input.video.CameraHelper;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
 import com.pedro.rtplibrary.util.FpsListener;
 
 import net.ossrs.rtmp.ConnectCheckerRtmp;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityBroadcastBinding;
-import eu.siacs.conversations.http.data.LiveStreamResponse;
-import eu.siacs.conversations.services.ChannelDiscoveryService;
+import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.ui.adapter.StreamChatAdapter;
+import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.chatstate.ChatState;
 
 import static eu.siacs.conversations.utils.PermissionUtils.allGranted;
-import static eu.siacs.conversations.utils.PermissionUtils.writeGranted;
 
-public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Callback, ConnectCheckerRtmp, View.OnTouchListener, ChannelDiscoveryService.OnSecretKeyReceived {
+public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Callback, ConnectCheckerRtmp, View.OnTouchListener, XmppConnectionService.OnStreamChatMessageReceived {
+
+    Conversation chatConversation;
+    Conversation instantRoomConversation;
+    String uuid = null;
+    StreamChatAdapter streamChatAdapter = new StreamChatAdapter();
 
     // Logging tag
     private static final String TAG = "MuxLive";
@@ -42,6 +63,7 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
 
     // Config from the other activity comes in through an intent with some extra keys
     public static final String intentExtraStreamKey = "STREAMKEY";
+    public static final String intentExtraPlaybackUrl = "PLAYBACKURL";
     public static final String intentExtraPreset = "PRESET";
     public static final int REQUEST_CAMERA_AUDIO = 121;
 
@@ -57,6 +79,41 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
     private Boolean liveDesired = false;
     private String streamKey;
     private Preset preset;
+
+    @Override
+    public void onStreamChatMessageReceived(Message message) {
+        message.setEncryption(Message.ENCRYPTION_NONE);
+        runOnUiThread(() -> {
+            if (!message.getBody().equals("joiintlike"))
+                streamChatAdapter.updateMessage(message);
+        });
+    }
+
+    @Override
+    public void onStreamLiked() {
+        runOnUiThread(() -> {
+            binding.ivLike.setVisibility(View.VISIBLE);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                binding.ivLike.setVisibility(View.GONE);
+            }, 3000);
+            Glide.with(this).load(R.drawable.ic_heart).into(binding.ivLike);
+        });
+    }
+
+    @Override
+    public void onUuidReceived(String uuid) {
+
+    }
+
+    @Override
+    protected void refreshUiReal() {
+        Log.e(TAG, "refreshUiReal: liked by audience");
+    }
+
+    @Override
+    void onBackendConnected() {
+        binding.button.performClick();
+    }
 
     // Encoding presets and profiles
     public enum Preset {
@@ -81,29 +138,6 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
     }
 
     @Override
-    protected void refreshUiReal() {
-
-    }
-
-    @Override
-    void onBackendConnected() {
-        if (hasCameraAndAudioPermission(REQUEST_CAMERA_AUDIO)) {
-            binding.progressBar.setVisibility(View.VISIBLE);
-            xmppConnectionService.getSecretKeyWithOnlyAudio(this);
-        }
-    }
-
-    @Override
-    public void secretKeyFound(LiveStreamResponse liveStreamResponse) {
-        runOnUiThread(() -> {
-            binding.progressBar.setVisibility(View.GONE);
-//            muxToast(liveStreamResponse.get_skey());
-            binding.button.setVisibility(View.VISIBLE);
-            streamKey = liveStreamResponse.get_skey();
-        });
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_broadcast);
@@ -116,37 +150,6 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
         goLiveButton = (TextView) findViewById(R.id.button);
         bitrateLabel = (TextView) findViewById(R.id.bitrateLabel);
         fpsLabel = (TextView) findViewById(R.id.fpslabel);
-
-        // Setup the camera
-        rtmpCamera = new RtmpCamera1(surfaceView, this);
-        rtmpCamera.setReTries(1000); // Effectively retry forever
-
-        // Listen for FPS change events to update the FPS indicator
-        FpsListener.Callback callback = new FpsListener.Callback() {
-            @Override
-            public void onFps(int fps) {
-                Log.i(TAG, "FPS: " + fps);
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        fpsLabel.setText(fps + " fps");
-                    }
-                });
-            }
-        };
-        rtmpCamera.setFpsListener(callback);
-
-        // Set RTMP configuration from the intent that triggered this activity
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            String streamKey = extras.getString(intentExtraStreamKey);
-            Preset preset = (Preset) extras.getSerializable(intentExtraPreset);
-            this.preset = preset;
-            this.streamKey = streamKey;
-            Log.i(TAG, "Stream Key: " + streamKey);
-        }
-
-        // Keep the screen active on the Broadcast Activity
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     public void goLiveClicked(View view) {
@@ -158,17 +161,44 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
             new Thread(new Runnable() {
                 public void run() {
                     rtmpCamera.stopStream();
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            goLiveButton.setText("Go Live!");
-                        }
-                    });
+                    runOnUiThread(() -> finish());
                 }
             }).start();
             liveDesired = false;
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED); // Unlock orientation
         } else {
 
+            goLiveButton.setText("Connecting... (Cancel)");
+            // Setup the camera
+            rtmpCamera = new RtmpCamera1(surfaceView, this);
+            rtmpCamera.setReTries(1000); // Effectively retry forever
+
+            // Listen for FPS change events to update the FPS indicator
+            FpsListener.Callback callback = new FpsListener.Callback() {
+                @Override
+                public void onFps(int fps) {
+                    Log.i(TAG, "FPS: " + fps);
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            fpsLabel.setText(fps + " fps");
+                        }
+                    });
+                }
+            };
+            rtmpCamera.setFpsListener(callback);
+
+            // Set RTMP configuration from the intent that triggered this activity
+            Bundle extras = getIntent().getExtras();
+            if (extras != null) {
+                String streamKey = extras.getString(intentExtraStreamKey);
+                Preset preset = (Preset) extras.getSerializable(intentExtraPreset);
+                this.preset = preset;
+                this.streamKey = streamKey;
+                Log.i(TAG, "Stream Key: " + streamKey);
+            }
+
+            // Keep the screen active on the Broadcast Activity
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             // Lock orientation to the current orientation while stream is active
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             switch (rotation) {
@@ -204,7 +234,8 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
             // Start the stream!
             rtmpCamera.startStream(rtmpEndpoint + streamKey);
             liveDesired = true;
-            goLiveButton.setText("Connecting... (Cancel)");
+            goLiveButton.setText("Initializing Stream Chat...");
+            startStreamChat();
         }
     }
 
@@ -262,8 +293,73 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
         runOnUiThread(new Runnable() {
             public void run() {
                 muxToast("RTMP Connection Successful!");
+                startStreamChat();
             }
         });
+    }
+
+    private void startStreamChat() {
+        if (instantRoomConversation != null) return;
+        uuid = getIntent().getExtras().getString("uuid");
+        if (uuid != null)
+            chatConversation = xmppConnectionService.findConversationByUuid(uuid);
+        if (chatConversation == null) {
+            muxToast("No Conversation found in this activity");
+            return;
+        }
+        goLiveButton.setText("Initializing Stream Chat...");
+        List<Jid> jids = new ArrayList<>();
+        jids.add(chatConversation.getJid().asBareJid());
+        jids.addAll(chatConversation.getMucOptions().getMembers(false));
+        xmppConnectionService.createAdhocConference(chatConversation.getAccount(),
+                "random" + (new Random().nextInt(1000)),
+                jids,
+                new UiCallback<Conversation>() {
+                    @Override
+                    public void success(Conversation object) {
+                        runOnUiThread(() -> {
+                            goLiveButton.setText("Stop Live Stream");
+                            binding.textsend.setVisibility(View.VISIBLE);
+                            muxToast("instant room created." + object.getUuid());
+                            Log.e("onBindViewHolder: ", object.getContact().getJid().asBareJid() + "/instant/" + object.getName());
+                            xmppConnectionService.setonStreamChatMessageReceivedListener(BroadcastActivity.this);
+                            instantRoomConversation = object;
+                            //  sending the instant room uui as message
+                            JSONObject uuidAsMessage = new JSONObject();
+                            try {
+                                uuidAsMessage.put("uuid", instantRoomConversation.getContact().getJid());
+                                uuidAsMessage.put(intentExtraPlaybackUrl, getIntent().getExtras().getString(intentExtraPlaybackUrl));
+                                uuidAsMessage.put("ignore", true);
+                                uuidAsMessage.put("isInstantRoom", true);
+                                sendMessage(uuidAsMessage.toString(), chatConversation);
+                                Log.e("success: ", uuidAsMessage.getString(intentExtraPlaybackUrl));
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            initializeChatView();
+                        });
+                    }
+
+                    @Override
+                    public void error(int errorCode, Conversation object) {
+
+                    }
+
+                    @Override
+                    public void userInputRequired(PendingIntent pi, Conversation object) {
+
+                    }
+                });
+        binding.textSendButton.setOnClickListener(view -> {
+            sendMessage();
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        rtmpCamera.stopPreview();
+        rtmpCamera.stopStream();
     }
 
     @Override
@@ -323,11 +419,70 @@ public class BroadcastActivity extends XmppActivity implements SurfaceHolder.Cal
         if (grantResults.length > 0) {
             if (allGranted(grantResults)) {
                 if (requestCode == REQUEST_CAMERA_AUDIO) {
-                    onBackendConnected();
+//                    onBackendConnected();
                 }
             } else {
                 Toast.makeText(this, R.string.no_camera_permission, Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+
+    private void initializeChatView() {
+        binding.rvSteamChat.setLayoutManager(new LinearLayoutManager(this));
+        binding.rvSteamChat.setAdapter(streamChatAdapter);
+    }
+
+    private void sendMessage() {
+        instantRoomConversation.setOutgoingChatState(ChatState.ACTIVE);
+        xmppConnectionService.sendChatState(instantRoomConversation);
+
+        final Editable text = this.binding.textinput.getText();
+        final String body = text == null ? "" : text.toString();
+        final Conversation conversation = this.instantRoomConversation;
+        if (body.length() == 0 || conversation == null) {
+            return;
+        }
+        final Message message;
+        if (conversation.getCorrectingMessage() == null) {
+            message = new Message(conversation, body, conversation.getNextEncryption());
+            Message.configurePrivateMessage(message);
+        } else {
+            message = conversation.getCorrectingMessage();
+            message.setBody(body);
+            message.putEdited(message.getUuid(), message.getServerMsgId());
+            message.setServerMsgId(null);
+            message.setUuid(UUID.randomUUID().toString());
+        }
+        message.setEncryption(Message.ENCRYPTION_NONE);
+        xmppConnectionService.sendMessage(message);
+        streamChatAdapter.updateMessage(message);
+        messageSent();
+    }
+
+    private void sendMessage(String body, Conversation conversation) {
+        if (body.length() == 0 || conversation == null) {
+            return;
+        }
+        final Message message;
+        if (conversation.getCorrectingMessage() == null) {
+            message = new Message(conversation, body, conversation.getNextEncryption());
+            Message.configurePrivateMessage(message);
+        } else {
+            message = conversation.getCorrectingMessage();
+            message.setBody(body);
+            message.putEdited(message.getUuid(), message.getServerMsgId());
+            message.setServerMsgId(null);
+            message.setUuid(UUID.randomUUID().toString());
+        }
+        xmppConnectionService.sendMessage(message);
+    }
+
+    protected void messageSent() {
+        this.binding.textinput.setText("");
+        if (instantRoomConversation.setCorrectingMessage(null)) {
+            this.binding.textinput.append(instantRoomConversation.getDraftMessage());
+            instantRoomConversation.setDraftMessage(null);
         }
     }
 }

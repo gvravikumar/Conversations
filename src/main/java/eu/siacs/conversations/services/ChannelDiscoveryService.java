@@ -115,6 +115,31 @@ public class ChannelDiscoveryService {
         }
     }
 
+    void getSecretLiveStreamKeyWithAudioVideo(OnSecretKeyReceived listener) {
+        Call<LiveStreamResponse> call = joiintNetworkInterface.getSecretLiveStreamKeyWithAudioVideo();
+        try {
+            call.enqueue(new Callback<LiveStreamResponse>() {
+                @Override
+                public void onResponse(@NonNull Call<LiveStreamResponse> call, @NonNull Response<LiveStreamResponse> response) {
+                    final LiveStreamResponse body = response.body();
+                    if (body == null) {
+                        listener.secretKeyFound(null);
+                        logError(response);
+                        return;
+                    }
+                    listener.secretKeyFound(body);
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<LiveStreamResponse> call, @NonNull Throwable throwable) {
+                    listener.secretKeyFound(null);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     void cleanCache() {
         cache.invalidateAll();
     }

@@ -231,6 +231,7 @@ public class XmppConnectionService extends Service {
         }
     };
     private PresenceGenerator mPresenceGenerator = new PresenceGenerator(this);
+    private OnStreamChatMessageReceived onStreamChatMessageReceived;
     private List<Account> accounts;
     private JingleConnectionManager mJingleConnectionManager = new JingleConnectionManager(this);
     private HttpConnectionManager mHttpConnectionManager = new HttpConnectionManager(this);
@@ -872,6 +873,10 @@ public class XmppConnectionService extends Service {
 
     public void getSecretKeyWithOnlyAudio(ChannelDiscoveryService.OnSecretKeyReceived listener) {
         mChannelDiscoveryService.getSecretKeyWithOnlyAudio(listener);
+    }
+
+    public void getSecretLiveStreamKeyWithAudioVideo(ChannelDiscoveryService.OnSecretKeyReceived listener) {
+        mChannelDiscoveryService.getSecretLiveStreamKeyWithAudioVideo(listener);
     }
 
     public void discoverChannels(String query, ChannelDiscoveryService.Method method, ChannelDiscoveryService.OnChannelSearchResultsFound onChannelSearchResultsFound) {
@@ -2202,7 +2207,7 @@ public class XmppConnectionService extends Service {
         final Jid jid = Jid.ofEscaped(address);
         final Account account = new Account(jid, password);
         account.setOption(Account.OPTION_DISABLED, true);
-        Log.d(Config.LOGTAG,jid.asBareJid().toEscapedString()+": provisioning account");
+        Log.d(Config.LOGTAG, jid.asBareJid().toEscapedString() + ": provisioning account");
         createAccount(account);
     }
 
@@ -2533,6 +2538,14 @@ public class XmppConnectionService extends Service {
         if (remainingListeners) {
             switchToBackground();
         }
+    }
+
+    public void setonStreamChatMessageReceivedListener(final OnStreamChatMessageReceived listener) {
+        this.onStreamChatMessageReceived = listener;
+    }
+
+    public OnStreamChatMessageReceived getOnStreamChatMessageReceivedListener() {
+        return onStreamChatMessageReceived;
     }
 
     public void setOnMucRosterUpdateListener(OnMucRosterUpdate listener) {
@@ -4680,6 +4693,12 @@ public class XmppConnectionService extends Service {
 
     public interface OnAccountUpdate {
         void onAccountUpdate();
+    }
+
+    public interface OnStreamChatMessageReceived {
+        void onStreamChatMessageReceived(Message message);
+        void onStreamLiked();
+        void onUuidReceived(String uuid);
     }
 
     public interface OnCaptchaRequested {

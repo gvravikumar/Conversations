@@ -4,7 +4,7 @@ import eu.siacs.conversations.xml.Element;
 
 public enum ChatState {
 
-	ACTIVE, INACTIVE, GONE, COMPOSING, PAUSED;
+	ACTIVE, INACTIVE, GONE, COMPOSING, PAUSED, LIKEINLIVESTREAM;
 
 	public static ChatState parse(Element element) {
 		final String NAMESPACE = "http://jabber.org/protocol/chatstates";
@@ -18,6 +18,8 @@ public enum ChatState {
 			return GONE;
 		} else if (element.hasChild("paused",NAMESPACE)) {
 			return PAUSED;
+		}  else if (element.hasChild("likeinlivestream",NAMESPACE)) {
+			return LIKEINLIVESTREAM;
 		} else {
 			return null;
 		}

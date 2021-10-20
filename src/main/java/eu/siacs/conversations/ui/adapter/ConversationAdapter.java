@@ -1,6 +1,7 @@
 package eu.siacs.conversations.ui.adapter;
 
 import android.graphics.Typeface;
+import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,6 +55,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
             return;
         }
         CharSequence name = conversation.getName();
+        Log.e("onBindViewHolder: ", conversation.getContact().getJid().asBareJid() + "/" + conversation.getName());
         if (name instanceof Jid) {
             viewHolder.binding.conversationName.setText(IrregularUnicodeDetector.style(activity, (Jid) name));
         } else {

@@ -85,7 +85,9 @@ import eu.siacs.conversations.entities.ReadByMarker;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.entities.TransferablePlaceholder;
 import eu.siacs.conversations.http.HttpDownloadConnection;
+import eu.siacs.conversations.http.data.LiveStreamResponse;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.services.ChannelDiscoveryService;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.QuickConversationsService;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -136,7 +138,7 @@ import static eu.siacs.conversations.utils.PermissionUtils.getFirstDenied;
 import static eu.siacs.conversations.utils.PermissionUtils.writeGranted;
 
 
-public class ConversationFragment extends XmppFragment implements EditMessage.KeyboardListener, MessageAdapter.OnContactPictureLongClicked, MessageAdapter.OnContactPictureClicked {
+public class ConversationFragment extends XmppFragment implements EditMessage.KeyboardListener, MessageAdapter.OnContactPictureLongClicked, MessageAdapter.OnContactPictureClicked, ChannelDiscoveryService.OnSecretKeyReceived {
 
 
     public static final int REQUEST_SEND_MESSAGE = 0x0201;
@@ -989,10 +991,10 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
             } else {
                 final Optional<OngoingRtpSession> ongoingRtpSession = activity.xmppConnectionService.getJingleConnectionManager().getOngoingRtpConnection(conversation.getContact());
                 if (ongoingRtpSession.isPresent()) {
-                    menuOngoingCall.setVisible(true);
+                    menuOngoingCall.setVisible(false);
                     menuCall.setVisible(false);
                 } else {
-                    menuOngoingCall.setVisible(true);
+                    menuOngoingCall.setVisible(false);
                     final RtpCapability.Capability rtpCapability = RtpCapability.check(conversation.getContact());
                     menuCall.setVisible(rtpCapability != RtpCapability.Capability.NONE);
                     menuVideoCall.setVisible(rtpCapability == RtpCapability.Capability.VIDEO);
@@ -1294,9 +1296,10 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     }
 
     private void goLive() {
-        Intent intent = new Intent(activity, BroadcastActivity.class);
-        intent.putExtra(BroadcastActivity.intentExtraPreset, BroadcastActivity.Preset.hd_720p_30fps_3mbps);
-        startActivity(intent);
+        if (hasPermissions(1122, Manifest.permission.CAMERA) && hasPermissions(1123, Manifest.permission.RECORD_AUDIO)) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+            activity.xmppConnectionService.getSecretLiveStreamKeyWithAudioVideo(this);
+        }
     }
 
     private void returnToOngoingCall() {
@@ -1546,6 +1549,11 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                         break;
                     case REQUEST_START_VIDEO_CALL:
                         triggerRtpSession(RtpSessionActivity.ACTION_MAKE_VIDEO_CALL);
+                        break;
+                    case 1122:
+                    case 1123:
+                        if (hasPermissions(1122, Manifest.permission.CAMERA) && hasPermissions(1123, Manifest.permission.RECORD_AUDIO))
+                            goLive();
                         break;
                     default:
                         attachFile(requestCode);
@@ -3027,5 +3035,18 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
             }
         }
         activity.switchToAccount(message.getConversation().getAccount(), fingerprint);
+    }
+
+    @Override
+    public void secretKeyFound(LiveStreamResponse liveStreamResponse) {
+        runOnUiThread(() -> {
+            binding.progressBar.setVisibility(View.GONE);
+        });
+        Intent intent = new Intent(activity, BroadcastActivity.class);
+        intent.putExtra(BroadcastActivity.intentExtraStreamKey, liveStreamResponse.get_skey());
+        intent.putExtra(BroadcastActivity.intentExtraPlaybackUrl, liveStreamResponse.get_playback_url());
+        intent.putExtra(BroadcastActivity.intentExtraPreset, BroadcastActivity.Preset.hd_720p_30fps_3mbps);
+        intent.putExtra("uuid", conversation.getUuid());
+        startActivity(intent);
     }
 }

@@ -61,6 +61,7 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 	public static final int TYPE_PRIVATE = 4;
 	public static final int TYPE_PRIVATE_FILE = 5;
 	public static final int TYPE_RTP_SESSION = 6;
+	public static final int STREAM_CHAT = 99;
 
 	public static final String CONVERSATION = "conversationUuid";
 	public static final String COUNTERPART = "counterpart";

@@ -3,6 +3,9 @@ package eu.siacs.conversations.parser;
 import android.util.Log;
 import android.util.Pair;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -116,6 +119,30 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     } else {
                         return false;
                     }
+                } else {
+                    return c.setIncomingChatState(state);
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isChatStateIsLike(Conversation c, final boolean isTypeGroupChat, final MessagePacket packet) {
+        ChatState state = ChatState.parse(packet);
+        if (state != null && c != null) {
+            final Account account = c.getAccount();
+            Jid from = packet.getFrom();
+            if (from.asBareJid().equals(account.getJid().asBareJid())) {
+                c.setOutgoingChatState(state);
+                if (state == ChatState.ACTIVE || state == ChatState.COMPOSING) {
+                    mXmppConnectionService.markRead(c);
+                    activateGracePeriod(account);
+                }
+                return false;
+            } else {
+                if (isTypeGroupChat) {
+                    MucOptions.User user = c.getMucOptions().findUserByFullJid(from);
+                    return state == ChatState.LIKEINLIVESTREAM;
                 } else {
                     return c.setIncomingChatState(state);
                 }
@@ -746,6 +773,20 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     mXmppConnectionService.getNotificationService().push(message);
                 }
             }
+            if (mXmppConnectionService.getOnStreamChatMessageReceivedListener() != null) {
+                try {
+                    if (new JSONObject(message.getBody()) instanceof JSONObject) {
+                        JSONObject uuidAsMessage = new JSONObject(message.getBody());
+                        mXmppConnectionService.getOnStreamChatMessageReceivedListener().onUuidReceived(uuidAsMessage.optString("uuid"));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                Log.e("joiintlike", message.getContact().getJid().toString());
+                if (message.getBody().equals("joiintlike") && !message.getContact().isSelf())
+                    mXmppConnectionService.getOnStreamChatMessageReceivedListener().onStreamLiked();
+                mXmppConnectionService.getOnStreamChatMessageReceivedListener().onStreamChatMessageReceived(message);
+            }
         } else if (!packet.hasChild("body")) { //no body
 
             final Conversation conversation = mXmppConnectionService.find(account, from.asBareJid());
@@ -776,6 +817,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             if (query == null && extractChatState(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet)) {
                 mXmppConnectionService.updateConversationUi();
             }
+
+            if (mXmppConnectionService.getOnStreamChatMessageReceivedListener() != null && isChatStateIsLike(mXmppConnectionService.find(account, counterpart.asBareJid()), isTypeGroupChat, packet))
+                mXmppConnectionService.getOnStreamChatMessageReceivedListener().onStreamLiked();
 
             if (isTypeGroupChat) {
                 if (packet.hasChild("subject")) { //TODO usually we would want to check for lack of body; however some servers do set a body :(
